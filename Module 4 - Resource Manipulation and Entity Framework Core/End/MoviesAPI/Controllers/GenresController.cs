@@ -1,5 +1,8 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using AutoMapper;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using MoviesAPI.DTOs;
 using MoviesAPI.Entities;
 using MoviesAPI.Filters;
 using MoviesAPI.Services;
@@ -12,68 +15,76 @@ namespace MoviesAPI.Controllers
     [ApiController]
     public class GenresController: ControllerBase
     {
-        private readonly IRepository repository;
         private readonly ILogger<GenresController> logger;
+        private readonly ApplicationDbContext context;
+        private readonly IMapper mapper;
 
-        public GenresController(IRepository repository, ILogger<GenresController> logger)
+        public GenresController(ILogger<GenresController> logger,
+            ApplicationDbContext context,
+            IMapper mapper)
         {
-            this.repository = repository;
             this.logger = logger;
+            this.context = context;
+            this.mapper = mapper;
         }
 
         [HttpGet] // api/genres
-        [HttpGet("list")] // api/genres/list
-        [HttpGet("/allgenres")] // allgenres
-        //[ResponseCache(Duration = 60)]
-        [ServiceFilter(typeof(MyActionFilter))]
-        public async Task<ActionResult<List<Genre>>> Get()
+        public async Task<ActionResult<List<GenreDTO>>> Get()
         {
-            logger.LogInformation("Getting all the genres");
-
-            return await repository.GetAllGenres();
+            var genres = await context.Genres.AsNoTracking().ToListAsync();
+            var genresDTOs = mapper.Map<List<GenreDTO>>(genres);
+            return genresDTOs;
         }
 
         [HttpGet("{Id:int}", Name = "getGenre")] // api/genres/example
-        [ServiceFilter(typeof(MyActionFilter))]
-        public ActionResult<Genre> Get(int Id, string param2)
+        public async Task<ActionResult<GenreDTO>> Get(int Id)
         {
-            logger.LogDebug("get by Id method executing...");
-
-            var genre = repository.GetGenreById(Id);
+            var genre = await context.Genres.FirstOrDefaultAsync(x => x.Id == Id);
 
             if (genre == null)
             {
-                logger.LogWarning($"Genre with Id {Id} not found");
-                logger.LogError("this is an error");
-                //throw new ApplicationException();
                 return NotFound();
             }
 
-            //return Ok(2);
-            //return "felipe";
-            return genre;
+            var genreDTO = mapper.Map<GenreDTO>(genre);
+
+            return genreDTO;
         }
 
         [HttpPost]
-        public ActionResult Post([FromBody] Genre genre)
+        public async Task<ActionResult> Post([FromBody] GenreCreationDTO genreCreation)
         {
-            repository.AddGenre(genre);
+            var genre = mapper.Map<Genre>(genreCreation);
+            context.Add(genre);
+            await context.SaveChangesAsync();
+            var genreDTO = mapper.Map<GenreDTO>(genre);
 
-            return new CreatedAtRouteResult("getGenre", new { Id = genre.Id }, genre);
+            return new CreatedAtRouteResult("getGenre", new { genreDTO.Id }, genreDTO);
         }
 
-        [HttpPut]
-        public ActionResult Put([FromBody] Genre genre)
+        [HttpPut("{id}")]
+        public async Task<ActionResult> Put(int id, [FromBody] GenreCreationDTO genreCreation)
         {
-
+            var genre = mapper.Map<Genre>(genreCreation);
+            genre.Id = id;
+            context.Entry(genre).State = EntityState.Modified;
+            await context.SaveChangesAsync();
             return NoContent();
         }
 
-        [HttpDelete]
-        public ActionResult Delete()
+        [HttpDelete("{id}")]
+        public async Task<ActionResult> Delete(int id)
         {
-            return NoContent();
+            var exists = await context.Genres.AnyAsync(x => x.Id == id);
+            if (!exists)
+            {
+                return NotFound();
+            }
 
+            context.Remove(new Genre() { Id = id });
+            await context.SaveChangesAsync();
+
+            return NoContent();
         }
     }
 }
