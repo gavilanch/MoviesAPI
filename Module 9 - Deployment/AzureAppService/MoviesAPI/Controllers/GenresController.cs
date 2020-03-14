@@ -11,6 +11,7 @@ using MoviesAPI.Filters;
 using MoviesAPI.Helpers;
 using MoviesAPI.Services;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace MoviesAPI.Controllers
@@ -71,6 +72,7 @@ namespace MoviesAPI.Controllers
             if (User.Identity.IsAuthenticated)
             {
                 var name = User.Identity.Name;
+                var claims = User.Claims.ToList();
             }
 
             return await Delete<Genre>(id);
