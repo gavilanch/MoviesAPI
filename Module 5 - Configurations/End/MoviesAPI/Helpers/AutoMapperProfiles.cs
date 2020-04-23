@@ -31,7 +31,6 @@ namespace MoviesAPI.Helpers
                 .ForMember(x => x.MoviesActors, options => options.MapFrom(MapMoviesActors));
 
             CreateMap<Movie, MovieDetailsDTO>()
-               .ForMember(x => x.Poster, options => options.Ignore())
                .ForMember(x => x.Genres, options => options.MapFrom(MapMoviesGenres))
                .ForMember(x => x.Actors, options => options.MapFrom(MapMoviesActors));
 
