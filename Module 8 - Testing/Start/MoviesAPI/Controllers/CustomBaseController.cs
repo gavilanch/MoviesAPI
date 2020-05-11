@@ -12,7 +12,6 @@ using System.Threading.Tasks;
 
 namespace MoviesAPI.Controllers
 {
-    [ApiExplorerSettings(IgnoreApi = true)]
     public class CustomBaseController : ControllerBase
     {
         private readonly ApplicationDbContext context;
