@@ -77,6 +77,12 @@ namespace MoviesAPI.Controllers
             {
                 moviesQueryable = moviesQueryable.Where(x => x.InTheaters);
             }
+            
+            //Please read description and merge
+            if (filterMoviesDTO.InTheaters == false)
+            {
+                moviesQueryable = moviesQueryable.Where(x => !x.InTheaters);
+            }
 
             if (filterMoviesDTO.UpcomingReleases)
             {
